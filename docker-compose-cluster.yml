@@ -28,9 +28,9 @@ services:
       - /bin/sh
       - -c
       - |
-        exec redis-server /data/redis.conf --port 7001
+        exec redis-server /data/redis.conf --port ${REDIS_NODE_1_PORT}
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7001", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${REDIS_NODE_1_PORT}", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -71,9 +71,9 @@ services:
       - /bin/sh
       - -c
       - |
-        exec redis-server /data/redis.conf --port 7002
+        exec redis-server /data/redis.conf --port ${REDIS_NODE_2_PORT}
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7002", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${REDIS_NODE_2_PORT}", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -114,9 +114,9 @@ services:
       - /bin/sh
       - -c
       - |
-        exec redis-server /data/redis.conf --port 7003
+        exec redis-server /data/redis.conf --port ${REDIS_NODE_3_PORT}
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7003", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${REDIS_NODE_3_PORT}", "--user", "${REDIS_USERNAME}", "--pass", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
