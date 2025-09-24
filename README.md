@@ -75,24 +75,28 @@ docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house \
 
 ## Access Methods
 
-### Non-SSL (Testing)
+### Public Access Methods
+
+**Non-SSL (Testing):**
 ```bash
 redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c
 ```
 
-### SSL (Production)
+**SSL (Production):**
 ```bash
 redis-cli -h 100.81.111.21 -p 6381 -a kumar_house --user kumar_house --tls --insecure -c
 ```
 
+n**Security Note:** Port 6380 (Docker nginx) is internal-only for security.
+
 ### Connection Strings
 
-**Testing:**
+**Non-SSL (Testing):**
 ```
 redis://kumar_house:kumar_house@100.81.111.21:6382
 ```
 
-**Production:**
+**SSL (Production):**
 ```
 rediss://kumar_house:kumar_house@100.81.111.21:6381
 ```
@@ -164,6 +168,7 @@ sudo tail -f /var/log/nginx/error.log
 ## Security Features
 
 - **No Direct Access**: Redis nodes only accessible through proxies
+- **Port Security**: Only ports 6381 (SSL) and 6382 (non-SSL) publicly exposed
 - **SSL Encryption**: Production traffic encrypted
 - **ACL Users**: Custom Redis user with restricted permissions
 - **Command Restrictions**: Dangerous commands disabled
@@ -257,6 +262,8 @@ tar -czf redis-cluster-backup.tar.gz \
 
 n## Code Integration
 
+n**Security Note:** Port 6380 (Docker nginx) is internal-only for security.
+
 ### Connection Strings
 
 **Production (SSL):** rediss://kumar_house:kumar_house@100.81.111.21:6381
@@ -273,6 +280,8 @@ n## Code Integration
 
 
 ## Code Integration
+
+n**Security Note:** Port 6380 (Docker nginx) is internal-only for security.
 
 ### Connection Strings
 
@@ -328,3 +337,44 @@ For issues and questions:
 **SSL Support**: ✅ Enabled  
 **High Availability**: ✅ 3-Node Cluster  
 **Security**: ✅ Hardened Configuration
+
+## Monitoring Tools
+
+### 📊 Redis Commander (Web UI)
+```bash
+docker run -d --name redis-commander -p 8081:8081 --restart unless-stopped rediscommander/redis-commander:latest --redis-host=100.81.111.21 --redis-port=6382 --redis-password=kumar_house --redis-username=kumar_house
+
+# Access: http://100.81.111.21:8081
+```
+
+### 📡 Pub/Sub Testing
+```bash
+# Subscriber
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c subscribe alerts
+
+# Publisher
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c publish alerts "System alert!"
+```
+
+### ⏰ Blocking Queue Operations
+```bash
+# Add jobs
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c lpush job_queue "task1" "task2"
+
+# Process jobs
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c blpop job_queue 30
+```
+
+### 📈 Real-time Monitoring
+```bash
+# Monitor commands
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c monitor
+
+# Cluster slots
+redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c cluster slots
+```
+
+## Access URLs
+- **Redis Commander**: http://100.81.111.21:8081
+- **SSL Redis**: rediss://kumar_house:kumar_house@100.81.111.21:6381  
+- **Non-SSL Redis**: redis://kumar_house:kumar_house@100.81.111.21:6382
