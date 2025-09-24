@@ -11,11 +11,11 @@ events {
 }
 
 stream {
-    upstream docker_redis {
-        server 172.20.0.5:6380;
+    upstream docker_nginx-proxy {
+        server 127.0.0.1:6380;
     }
 
-    # SSL endpoint (port 6381)
+    # SSL endpoint (port 6381) - Cluster mode
     server {
         listen 0.0.0.0:6381 ssl;
         
@@ -23,18 +23,20 @@ stream {
         ssl_certificate_key /etc/ssl/private/redis-private.key;
         ssl_protocols TLSv1.2 TLSv1.3;
         
-        proxy_pass docker_redis;
-        proxy_timeout 0;
+        proxy_pass docker_nginx-proxy;
+        proxy_connect_timeout 1s;
+        proxy_timeout 600s;
         proxy_responses 1;
         error_log /var/log/nginx/redis-ssl-error.log;
     }
 
-    # Non-SSL endpoint for testing (port 6382)
+    # Non-SSL endpoint (port 6382) - Cluster mode
     server {
         listen 0.0.0.0:6382;
         
-        proxy_pass docker_redis;
-        proxy_timeout 0;
+        proxy_pass docker_nginx-proxy;
+        proxy_connect_timeout 1s;
+        proxy_timeout 600s;
         proxy_responses 1;
         error_log /var/log/nginx/redis-nossl-error.log;
     }
