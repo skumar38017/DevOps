@@ -344,7 +344,7 @@ For issues and questions:
 ```bash
 docker run -d --name redis-commander -p 8081:8081 --restart unless-stopped rediscommander/redis-commander:latest --redis-host=100.81.111.21 --redis-port=6382 --redis-password=kumar_house --redis-username=kumar_house
 
-# Access: http://100.81.111.21:8081
+# Access: http://100.81.111.21:8080
 ```
 
 ### 📡 Pub/Sub Testing
@@ -375,6 +375,6 @@ redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-w
 ```
 
 ## Access URLs
-- **Redis Commander**: http://100.81.111.21:8081
+- **Redis Commander**: http://100.81.111.21:8080 (Proxy Flow)
 - **SSL Redis**: rediss://kumar_house:kumar_house@100.81.111.21:6381  
 - **Non-SSL Redis**: redis://kumar_house:kumar_house@100.81.111.21:6382
