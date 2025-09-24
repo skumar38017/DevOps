@@ -1,0 +1,111 @@
+################################ GENERAL ################################
+pidfile /var/run/redis/redis-server.pid
+loglevel notice
+logfile "/data/redis.log"
+daemonize no
+supervised systemd
+
+################################ MEMORY ################################
+maxmemory 0
+maxmemory-policy allkeys-lru
+maxmemory-samples 5
+activerehashing yes
+activedefrag yes
+lazyfree-lazy-eviction yes
+lazyfree-lazy-expire yes
+lazyfree-lazy-server-del yes
+
+################################ NETWORK ################################
+bind 0.0.0.0
+protected-mode yes
+port ${PORT}
+tcp-backlog 65536
+tcp-keepalive 300
+timeout 0
+maxclients 100000
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit pubsub 32mb 8mb 60
+
+################################ PERSISTENCE ################################
+save 900 1
+save 300 10
+save 60 10000
+appendonly yes
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+aof-use-rdb-preamble yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir /data
+appendfilename "appendonly.aof"
+
+################################ PERFORMANCE ################################
+io-threads 4    
+io-threads-do-reads yes
+latency-monitor-threshold 0
+slowlog-log-slower-than -1
+repl-disable-tcp-nodelay no
+repl-backlog-size 1gb
+
+################################ SECURITY ################################
+requirepass ${REDIS_PASSWORD}
+masterauth ${REDIS_PASSWORD}
+rename-command FLUSHALL ""
+rename-command FLUSHDB ""
+rename-command DEBUG ""
+rename-command CONFIG ""
+rename-command SHUTDOWN ""
+rename-command KEYS ""
+
+# ACL Users
+user default on >${REDIS_PASSWORD} ~* &* +@all -@dangerous
+
+################################ CLUSTERING ################################
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-replica-validity-factor 10
+cluster-migration-barrier 1
+cluster-require-full-coverage no
+cluster-allow-reads-when-down yes
+cluster-node-timeout 30000
+
+databases 16
+
+################################ SECURITY ENHANCEMENTS ################################
+
+################################ MONITORING & LOGGING ################################
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+syslog-enabled yes
+syslog-ident redis
+tcp-keepalive 0
+client-output-buffer-limit normal 0 0 0
+cluster-config-file nodes.conf
+
+# MAXIMUM STORAGE CONFIGURATION
+stop-writes-on-bgsave-error no
+rdbchecksum yes
+
+# MAXIMUM UPTIME & ZERO DOWNFALL CONFIGURATION
+tcp-keepalive 60
+timeout 0
+tcp-backlog 65536
+maxclients 100000
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit replica 0 0 0
+client-output-buffer-limit pubsub 0 0 0
+
+# UNLIMITED STORAGE AS MEMORY
+maxmemory 0
+maxmemory-policy noeviction
+stop-writes-on-bgsave-error no
+
+# PERFORMANCE OPTIMIZATION
+hz 10
+dynamic-hz yes
+latency-monitor-threshold 0
+user ${REDIS_USERNAME} on >${REDIS_PASSWORD} ~* &* +@all
