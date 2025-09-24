@@ -5,17 +5,17 @@ A production-ready Redis cluster setup with secure SSL proxy and load balancing 
 ## Architecture
 
 ```
-Client → Main Nginx (SSL/Non-SSL) → Docker Nginx → Redis Cluster [3 Nodes]
+Client → Main Nginx (SSL/Non-SSL) → Docker Nginx → Redis Cluster [5 Nodes]
 ```
 
 **Flow:**
 - **Port 6381**: SSL endpoint (production)
 - **Port 6382**: Non-SSL endpoint (testing)
-- **Internal**: Docker nginx (6380) → Redis nodes (7001, 7002, 7003)
+- **Internal**: Docker nginx (6380) → Redis nodes (7001, 7002, 7003, 7004, 7005)
 
 ## Features
 
-- ✅ **3-Node Redis Cluster** with hash slot distribution
+- ✅ **5-Node Redis Cluster** with hash slot distribution
 - ✅ **SSL Termination** with self-signed certificates
 - ✅ **Load Balancing** across Redis nodes
 - ✅ **Security**: Internal services not exposed
@@ -46,6 +46,8 @@ REDIS_DB_PASSWORD=kumar_house
 REDIS_NODE_1_PORT=7001
 REDIS_NODE_2_PORT=7002
 REDIS_NODE_3_PORT=7003
+REDIS_NODE_4_PORT=7004
+REDIS_NODE_5_PORT=7005
 
 # Nginx Proxy Ports
 REDIS_HOST_PORT=6380
@@ -67,6 +69,7 @@ sudo systemctl start nginx
 # Create Redis cluster
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house \
   --cluster create redis-node-1:7001 redis-node-2:7002 redis-node-3:7003 \
+  redis-node-4:7004 redis-node-5:7005 \
   --cluster-replicas 0 --cluster-yes
 ```
 
@@ -188,6 +191,7 @@ docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house clu
 # Recreate cluster
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house \
   --cluster create redis-node-1:7001 redis-node-2:7002 redis-node-3:7003 \
+  redis-node-4:7004 redis-node-5:7005 \
   --cluster-replicas 0 --cluster-yes
 ```
 
