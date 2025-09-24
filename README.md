@@ -338,43 +338,6 @@ For issues and questions:
 **High Availability**: ✅ 3-Node Cluster  
 **Security**: ✅ Hardened Configuration
 
-## Monitoring Tools
-
-### 📊 Redis Commander (Web UI)
-```bash
-docker run -d --name redis-commander -p 8081:8081 --restart unless-stopped rediscommander/redis-commander:latest --redis-host=100.81.111.21 --redis-port=6382 --redis-password=kumar_house --redis-username=kumar_house
-
-# Access: http://100.81.111.21:8080
-```
-
-### 📡 Pub/Sub Testing
-```bash
-# Subscriber
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c subscribe alerts
-
-# Publisher
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c publish alerts "System alert!"
-```
-
-### ⏰ Blocking Queue Operations
-```bash
-# Add jobs
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c lpush job_queue "task1" "task2"
-
-# Process jobs
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c blpop job_queue 30
-```
-
-### 📈 Real-time Monitoring
-```bash
-# Monitor commands
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c monitor
-
-# Cluster slots
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c cluster slots
-```
-
-## Access URLs
-- **Redis Commander**: http://100.81.111.21:8080 (Proxy Flow)
+- **Web UI**: http://100.81.111.21:8080 (Proxy Flow)
 - **SSL Redis**: rediss://kumar_house:kumar_house@100.81.111.21:6381  
 - **Non-SSL Redis**: redis://kumar_house:kumar_house@100.81.111.21:6382
