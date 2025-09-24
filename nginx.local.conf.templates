@@ -1,0 +1,41 @@
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+load_module /usr/lib/nginx/modules/ngx_stream_module.so;
+
+events {
+    worker_connections 2048;
+    use epoll;
+    multi_accept on;
+}
+
+stream {
+    upstream docker_redis {
+        server 172.20.0.5:6380;
+    }
+
+    # SSL endpoint (port 6381)
+    server {
+        listen 0.0.0.0:6381 ssl;
+        
+        ssl_certificate /etc/ssl/certs/redis-public.crt;
+        ssl_certificate_key /etc/ssl/private/redis-private.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        
+        proxy_pass docker_redis;
+        proxy_timeout 0;
+        proxy_responses 1;
+        error_log /var/log/nginx/redis-ssl-error.log;
+    }
+
+    # Non-SSL endpoint for testing (port 6382)
+    server {
+        listen 0.0.0.0:6382;
+        
+        proxy_pass docker_redis;
+        proxy_timeout 0;
+        proxy_responses 1;
+        error_log /var/log/nginx/redis-nossl-error.log;
+    }
+}
