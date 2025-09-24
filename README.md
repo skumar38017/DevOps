@@ -5,13 +5,12 @@ A production-ready Redis cluster setup with secure SSL proxy and load balancing 
 ## Architecture
 
 ```
-Client → Main Nginx (SSL/Non-SSL/Single) → Docker Nginx → Redis Cluster [3 Nodes]
+Client → Main Nginx (SSL/Non-SSL) → Docker Nginx → Redis Cluster [3 Nodes]
 ```
 
 **Flow:**
-- **Port 6381**: SSL cluster endpoint (production)
-- **Port 6382**: Non-SSL cluster endpoint (testing)
-- **Port 6383**: Single node endpoint (GUI tools)
+- **Port 6381**: SSL endpoint (production)
+- **Port 6382**: Non-SSL endpoint (testing)
 - **Internal**: Docker nginx (6380) → Redis nodes (7001, 7002, 7003)
 
 ## Features
@@ -19,10 +18,9 @@ Client → Main Nginx (SSL/Non-SSL/Single) → Docker Nginx → Redis Cluster [3
 - ✅ **3-Node Redis Cluster** with hash slot distribution
 - ✅ **SSL Termination** with self-signed certificates
 - ✅ **Load Balancing** across Redis nodes
-- ✅ **GUI Tool Support** via single node endpoint
 - ✅ **Security**: Internal services not exposed
 - ✅ **High Availability** with auto-restart
-- ✅ **Triple Access** modes (SSL + Non-SSL + Single Node)
+- ✅ **Dual Access** modes (SSL + Non-SSL)
 
 ## Quick Start
 
@@ -74,184 +72,26 @@ docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house \
 
 ## Access Methods
 
-### SSL Cluster (Production)
-```bash
-redis-cli -h 100.81.111.21 -p 6381 -a kumar_house --user kumar_house --tls --insecure -c
-```
-
-### Non-SSL Cluster (Testing)
+### Non-SSL (Testing)
 ```bash
 redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house --no-auth-warning -c
 ```
 
-### Single Node (GUI Tools)
+### SSL (Production)
 ```bash
-redis-cli -h 100.81.111.21 -p 6383 -a kumar_house --user kumar_house --no-auth-warning
+redis-cli -h 100.81.111.21 -p 6381 -a kumar_house --user kumar_house --tls --insecure -c
 ```
 
 ### Connection Strings
 
-**SSL Cluster:**
-```
-rediss://kumar_house:kumar_house@100.81.111.21:6381
-```
-
-**Non-SSL Cluster:**
+**Testing:**
 ```
 redis://kumar_house:kumar_house@100.81.111.21:6382
 ```
 
-**Single Node (GUI):**
+**Production:**
 ```
-redis://kumar_house:kumar_house@100.81.111.21:6383
-```
-
-## GUI Tool Configuration
-
-### VSCode Redis Extension
-- **Host**: `100.81.111.21`
-- **Port**: `6383`
-- **Username**: `kumar_house`
-- **Password**: `kumar_house`
-- **TLS**: ❌ Disabled
-- **Timeout**: `30`
-
-### RedisInsight / Other GUI Tools
-Use the same settings as VSCode extension above.
-
-## Redis Commands & Information
-
-### Cluster Information
-```bash
-# Cluster status and nodes
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster nodes
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster info
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster slots
-
-# Individual node info
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info server
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info memory
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info replication
-```
-
-### Data Operations
-```bash
-# Scan data (cluster mode)
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c scan 0
-
-# Count keys per node
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house dbsize
-docker exec redis-node-2 redis-cli -p 7002 -a kumar_house --user kumar_house dbsize
-docker exec redis-node-3 redis-cli -p 7003 -a kumar_house --user kumar_house dbsize
-
-# Memory usage
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c info memory
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c memory usage user:1001
-```
-
-### Performance Monitoring
-```bash
-# Real-time monitoring
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c monitor
-
-# Statistics
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c info stats
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c info commandstats
-
-# Latency monitoring
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c latency latest
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c --latency
-```
-
-### Configuration
-```bash
-# View configuration
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c config get '*'
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c config get maxmemory*
-
-# Client connections
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c client list
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c info clients
-```
-
-## Test Data
-
-The cluster includes sample data for testing:
-
-```bash
-# Users (JSON)
-GET user:1001  # John Doe
-GET user:1002  # Jane Smith
-GET user:1003  # Bob Wilson
-
-# Products (Hash)
-HGETALL product:2001  # Laptop - 99.99
-HGETALL product:2002  # Phone - 99.99
-
-# Orders (List)
-LRANGE orders:queue 0 -1
-
-# Categories (Set)
-SMEMBERS categories
-
-# Leaderboard (Sorted Set)
-ZRANGE leaderboard 0 -1 WITHSCORES
-
-# Configuration & Counters
-GET config:timeout    # 30
-GET counter:visits    # Auto-incrementing
-GET session:abc123    # User session data
-
-# Test commands
-INCR counter:visits
-ZINCRBY leaderboard 100 player1
-LPOP orders:queue
-HGET product:2001 price
-```
-
-## Monitoring
-
-### Check Cluster Status
-```bash
-# Cluster health
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster nodes
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster info
-
-# Container health
-docker ps
-docker stats --no-stream
-
-# Nginx status
-sudo systemctl status nginx
-sudo netstat -tlnp | grep nginx
-```
-
-### Logs
-```bash
-# Docker nginx logs
-docker logs nginx-redis-proxy --tail 20
-
-# Redis logs
-docker logs redis-node-1 --tail 20
-docker logs redis-node-2 --tail 20
-docker logs redis-node-3 --tail 20
-
-# Main nginx logs
-sudo tail -f /var/log/nginx/error.log
-sudo tail -f /var/log/nginx/redis-nossl-error.log
-```
-
-### Performance Metrics
-```bash
-# System resources
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info cpu
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info memory
-
-# Network stats
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house info stats
-
-# Slow queries
-docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house slowlog get 10
+rediss://kumar_house:kumar_house@100.81.111.21:6381
 ```
 
 ## Configuration Files
@@ -266,14 +106,65 @@ docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house slo
 - `/etc/ssl/certs/redis-public.crt` - SSL certificate
 - `/etc/ssl/private/redis-private.key` - SSL private key
 
+## Test Data
+
+The cluster includes sample data for testing:
+
+```bash
+# Users (JSON)
+GET user:1001  # John Doe
+GET user:1002  # Jane Smith
+
+# Products (Hash)
+HGETALL product:2001  # Laptop details
+
+# Orders (List)
+LRANGE orders:queue 0 -1
+
+# Categories (Set)
+SMEMBERS categories
+
+# Leaderboard (Sorted Set)
+ZRANGE leaderboard 0 -1 WITHSCORES
+
+# Counters
+GET counter:visits
+INCR counter:visits
+```
+
+## Monitoring
+
+### Check Cluster Status
+```bash
+# Cluster nodes
+docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house cluster nodes
+
+# Container health
+docker ps
+
+# Nginx status
+sudo systemctl status nginx
+```
+
+### Logs
+```bash
+# Docker nginx logs
+docker logs nginx-redis-proxy
+
+# Redis logs
+docker logs redis-node-1
+
+# Main nginx logs
+sudo tail -f /var/log/nginx/error.log
+```
+
 ## Security Features
 
 - **No Direct Access**: Redis nodes only accessible through proxies
 - **SSL Encryption**: Production traffic encrypted
 - **ACL Users**: Custom Redis user with restricted permissions
-- **Command Restrictions**: Dangerous commands disabled (KEYS, FLUSHALL, etc.)
+- **Command Restrictions**: Dangerous commands disabled
 - **Network Isolation**: Docker network for internal communication
-- **Port Isolation**: Different ports for different access levels
 
 ## Troubleshooting
 
@@ -281,12 +172,9 @@ docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house slo
 ```bash
 # Test Redis nodes directly
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house ping
-docker exec redis-node-2 redis-cli -p 7002 -a kumar_house --user kumar_house ping
-docker exec redis-node-3 redis-cli -p 7003 -a kumar_house --user kumar_house ping
 
-# Test nginx endpoints
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house ping  # Cluster
-redis-cli -h 100.81.111.21 -p 6383 -a kumar_house --user kumar_house ping  # Single
+# Test Docker nginx
+redis-cli -h 172.20.0.5 -p 6380 -a kumar_house --user kumar_house ping
 
 # Check nginx connectivity
 sudo netstat -tlnp | grep nginx
@@ -294,28 +182,13 @@ sudo netstat -tlnp | grep nginx
 
 ### Cluster Issues
 ```bash
-# Check cluster state
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster nodes
-redis-cli -h 100.81.111.21 -p 6382 -a kumar_house --user kumar_house -c cluster info
-
-# Reset cluster (if needed)
+# Reset cluster
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house cluster reset
-docker exec redis-node-2 redis-cli -p 7002 -a kumar_house --user kumar_house cluster reset
-docker exec redis-node-3 redis-cli -p 7003 -a kumar_house --user kumar_house cluster reset
 
 # Recreate cluster
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house \
   --cluster create redis-node-1:7001 redis-node-2:7002 redis-node-3:7003 \
   --cluster-replicas 0 --cluster-yes
-```
-
-### GUI Connection Issues
-```bash
-# Test single node endpoint for GUI tools
-redis-cli -h 100.81.111.21 -p 6383 -a kumar_house --user kumar_house ping
-
-# Check if GUI tool supports clustering
-# Use port 6383 for tools that don't support Redis cluster mode
 ```
 
 ## Performance Tuning
@@ -346,7 +219,6 @@ sudo systemctl restart nginx
 # Allow only necessary ports
 sudo ufw allow 6381/tcp  # SSL Redis
 sudo ufw allow 6382/tcp  # Non-SSL Redis (optional)
-sudo ufw allow 6383/tcp  # GUI Redis (optional)
 ```
 
 ### Auto-Start Services
@@ -362,15 +234,11 @@ sudo systemctl enable docker
 
 ### Data Backup
 ```bash
-# Backup Redis data from all nodes
+# Backup Redis data
 docker exec redis-node-1 redis-cli -p 7001 -a kumar_house --user kumar_house BGSAVE
-docker exec redis-node-2 redis-cli -p 7002 -a kumar_house --user kumar_house BGSAVE
-docker exec redis-node-3 redis-cli -p 7003 -a kumar_house --user kumar_house BGSAVE
 
 # Copy backup files
-docker cp redis-node-1:/data/dump.rdb ./backup/node1-dump.rdb
-docker cp redis-node-2:/data/dump.rdb ./backup/node2-dump.rdb
-docker cp redis-node-3:/data/dump.rdb ./backup/node3-dump.rdb
+docker cp redis-node-1:/data/dump.rdb ./backup/
 ```
 
 ### Configuration Backup
@@ -383,16 +251,61 @@ tar -czf redis-cluster-backup.tar.gz \
   /etc/nginx/nginx.conf
 ```
 
-## Port Summary
+n## Code Integration
 
-| Port | Purpose | Protocol | Access Level |
-|------|---------|----------|--------------|
-| 6381 | SSL Cluster | SSL/TLS | Production |
-| 6382 | Non-SSL Cluster | TCP | Testing |
-| 6383 | Single Node | TCP | GUI Tools |
-| 6380 | Docker Nginx | TCP | Internal Only |
-| 7001-7003 | Redis Nodes | TCP | Internal Only |
+### Connection Strings
 
+**Production (SSL):** rediss://kumar_house:kumar_house@100.81.111.21:6381
+**Testing (Non-SSL):** redis://kumar_house:kumar_house@100.81.111.21:6382
+**GUI Tools:** redis://kumar_house:kumar_house@100.81.111.21:6383
+
+### Node.js
+
+
+### Python
+
+
+### Environment Variables
+
+
+## Code Integration
+
+### Connection Strings
+
+**Production (SSL):**
+```
+rediss://kumar_house:kumar_house@100.81.111.21:6381
+```
+
+**Testing (Non-SSL):**
+```
+redis://kumar_house:kumar_house@100.81.111.21:6382
+```
+
+**GUI Tools:**
+```
+redis://kumar_house:kumar_house@100.81.111.21:6383
+```
+
+### Node.js
+
+```javascript
+const Redis = require('ioredis');
+const redis = new Redis('redis://kumar_house:kumar_house@100.81.111.21:6382');
+```
+
+### Python
+
+```python
+import redis
+r = redis.Redis(host='100.81.111.21', port=6383, username='kumar_house', password='kumar_house')
+```
+
+### Environment Variables
+
+```bash
+export REDIS_URL="redis://kumar_house:kumar_house@100.81.111.21:6382"
+```
 ## License
 
 This project is licensed under the MIT License.
@@ -404,12 +317,10 @@ For issues and questions:
 2. Verify all containers are healthy
 3. Test individual components
 4. Review configuration files
-5. Use appropriate port for your use case
 
 ---
 
 **Redis Cluster Status**: ✅ Production Ready  
 **SSL Support**: ✅ Enabled  
-**GUI Support**: ✅ Enabled (Port 6383)  
 **High Availability**: ✅ 3-Node Cluster  
 **Security**: ✅ Hardened Configuration
