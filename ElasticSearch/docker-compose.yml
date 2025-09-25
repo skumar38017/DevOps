@@ -1,72 +1,85 @@
 services:
   elasticsearch-es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.3
+    image: ${IMAGE}
     container_name: elasticsearch-es01
     environment:
       - node.name=elasticsearch-es01
+      - ELASTICSEARCH_HTTP_PORT=${ELASTICSEARCH_HTTP_PORT}
+      - ELASTICSEARCH_HTTP_WEB_PORT=${ELASTICSEARCH_HTTP_WEB_PORT}
+      - ELASTICSEARCH_CLUSTER_NAME=${ELASTICSEARCH_CLUSTER_NAME}
     ulimits:
       memlock:
         soft: -1
         hard: -1
     restart: unless-stopped
+    ports:
+      - "9200:9200"
     volumes:
-      - ${PWD}/storage/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./storage/es01:/usr/share/elasticsearch/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${ELASTICSEARCH_HTTP_PORT}/_cat/nodes"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     networks:
       - esnet
 
   elasticsearch-es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.3
+    image: ${IMAGE}
     container_name: elasticsearch-es02
     environment:
       - node.name=elasticsearch-es02
+      - ELASTICSEARCH_HTTP_PORT=${ELASTICSEARCH_HTTP_PORT}
+      - ELASTICSEARCH_HTTP_WEB_PORT=${ELASTICSEARCH_HTTP_WEB_PORT}
+      - ELASTICSEARCH_CLUSTER_NAME=${ELASTICSEARCH_CLUSTER_NAME}
     ulimits:
       memlock:
         soft: -1
         hard: -1
     restart: unless-stopped
     volumes:
-      - ${PWD}/storage/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./storage/es02:/usr/share/elasticsearch/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${ELASTICSEARCH_HTTP_PORT}/_cat/nodes"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     networks:
       - esnet
 
   elasticsearch-es03:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.3
+    image: ${IMAGE}
     container_name: elasticsearch-es03
     environment:
       - node.name=elasticsearch-es03
+      - ELASTICSEARCH_HTTP_PORT=${ELASTICSEARCH_HTTP_PORT}
+      - ELASTICSEARCH_HTTP_WEB_PORT=${ELASTICSEARCH_HTTP_WEB_PORT}
+      - ELASTICSEARCH_CLUSTER_NAME=${ELASTICSEARCH_CLUSTER_NAME}
     ulimits:
       memlock:
         soft: -1
         hard: -1
     restart: unless-stopped
     volumes:
-      - ${PWD}/storage/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./storage/es03:/usr/share/elasticsearch/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${ELASTICSEARCH_HTTP_PORT}/_cat/nodes"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     networks:
       - esnet
 
   nginx-proxy:
     image: nginx:1.24-alpine
     container_name: nginx-elasticsearch-proxy
+    ports:
+      - "80:80"
     volumes:
-      - ${PWD}/storage/nginx/conf.d/elasticsearch.conf:/etc/nginx/conf.d/elasticsearch.conf:ro
-      - ${PWD}/storage/nginx/ssl:/etc/nginx/ssl:ro
-      - ${PWD}/storage/nginx/logs:/var/log/nginx:rw
-      - ${PWD}/storage/nginx/empty.conf:/etc/nginx/conf.d/default.conf
+      - ./storage/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
     depends_on:
       elasticsearch-es01:
@@ -75,17 +88,8 @@ services:
         condition: service_healthy
       elasticsearch-es03:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     networks:
       - esnet
 
-volumes:
-  esdata:
-
 networks:
   esnet:
-

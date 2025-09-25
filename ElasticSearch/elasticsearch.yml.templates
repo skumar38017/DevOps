@@ -1,0 +1,8 @@
+cluster.name: es-cluster
+node.name: ${node.name}
+network.host: 0.0.0.0
+http.port: ${port}
+discovery.seed_hosts: ["elasticsearch-es01", "elasticsearch-es02", "elasticsearch-es03"]
+cluster.initial_master_nodes: ["elasticsearch-es01", "elasticsearch-es02", "elasticsearch-es03"]
+xpack.security.enabled: false
+bootstrap.memory_lock: true
