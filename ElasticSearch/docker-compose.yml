@@ -6,6 +6,7 @@ services:
       - node.name=elasticsearch-es01
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+      - bootstrap.password=${ELASTIC_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -19,7 +20,7 @@ services:
       - es01_data:/usr/share/elasticsearch/data
       - es01_logs:/usr/share/elasticsearch/logs
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -u elastic:${ELASTIC_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -34,6 +35,7 @@ services:
       - node.name=elasticsearch-es02
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+      - bootstrap.password=${ELASTIC_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -47,7 +49,7 @@ services:
       - es02_data:/usr/share/elasticsearch/data
       - es02_logs:/usr/share/elasticsearch/logs
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -u elastic:${ELASTIC_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -62,6 +64,7 @@ services:
       - node.name=elasticsearch-es03
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+      - bootstrap.password=${ELASTIC_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -75,7 +78,7 @@ services:
       - es03_data:/usr/share/elasticsearch/data
       - es03_logs:/usr/share/elasticsearch/logs
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -u elastic:${ELASTIC_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
