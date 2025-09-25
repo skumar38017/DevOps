@@ -1,15 +1,20 @@
-# Elasticsearch Cluster with Nginx Load Balancer
+# Elasticsearch Cluster with Two-Tier Nginx Security Architecture
 
-Production-ready 3-node Elasticsearch cluster with nginx load balancer, optimized for Raspberry Pi 4.
+Production-ready 3-node Elasticsearch cluster with advanced two-tier nginx security architecture, optimized for Raspberry Pi 4.
 
-## 🏗️ Architecture
+## 🏗️ Two-Tier Security Architecture
 
 ```
-Client → Nginx (Port 80) → Load Balancer → Elasticsearch Cluster
-                                        ├── elasticsearch-es01 (Port 9200)
-                                        ├── elasticsearch-es02 (Port 9200)  
-                                        └── elasticsearch-es03 (Port 9200)
+Public/Users → Host Nginx (80/443) → Docker Nginx (127.0.0.1:8080) → Elasticsearch Cluster
+                                                                    ├── elasticsearch-es01
+                                                                    ├── elasticsearch-es02  
+                                                                    └── elasticsearch-es03
 ```
+
+### Security Layers:
+1. **Host Machine Nginx**: Public-facing proxy with SSL/TLS, rate limiting, security headers
+2. **Docker Nginx**: Internal load balancer, no public exposure
+3. **Elasticsearch Cluster**: Internal network only, no direct access
 
 ## 🚀 Quick Start
 
@@ -21,60 +26,108 @@ docker compose up -d
 ### Check Health
 ```bash
 curl http://100.86.190.125:80/_cluster/health?pretty
-```
-
-## 📁 Project Structure
-
-```
-ElasticSearch/
-├── docker-compose.yml              # Main orchestration
-├── .env                            # Environment variables
-├── storage/                        # Configuration storage
-│   ├── elasticsearch/              # ES config templates
-│   ├── es01/, es02/, es03/         # Node-specific configs
-│   └── nginx/nginx.conf            # Load balancer config
-├── monitor.sh                      # Monitoring script
-└── maintenance.sh                  # Maintenance script
+# Or using server name
+curl http://elasticsearch.local:80/_cluster/health?pretty
 ```
 
 ## 🌐 Access Points
 
-### Load Balanced (Recommended)
-```
+### Development (HTTP)
+```bash
+# By IP address
 http://100.86.190.125:80
+
+# By server name (add to /etc/hosts)
+http://elasticsearch.local:80
 ```
 
-### Direct Access
-```
-http://100.86.190.125:9200
+### Production (HTTPS)
+```bash
+# Secure access with SSL
+https://elasticsearch.local:443
 ```
 
-## 📊 Essential Commands
+### Blocked Ports (Security)
+- ❌ **Port 9200**: Completely blocked (no direct ES access)
+- ❌ **Docker ports**: Internal only (127.0.0.1:8080)
 
-### Cluster Operations
+## 💻 Code Integration Examples
+
+### Base URLs for Applications
+```bash
+# Development
+ES_DEV_URL="http://100.86.190.125:80"
+ES_DEV_HOST="http://elasticsearch.local:80"
+
+# Production  
+ES_PROD_URL="https://elasticsearch.local:443"
+```
+
+### Python
+```python
+from elasticsearch import Elasticsearch
+
+# Connect to cluster
+es = Elasticsearch([
+    {'host': '100.86.190.125', 'port': 80, 'scheme': 'http'},
+    # Or using server name
+    {'host': 'elasticsearch.local', 'port': 80, 'scheme': 'http'}
+])
+
+# Check cluster health
+health = es.cluster.health()
+print(f"Cluster status: {health['status']}")
+```
+
+### Node.js
+```javascript
+const { Client } = require('@elastic/elasticsearch');
+
+// Connect to cluster
+const client = new Client({
+  node: 'http://100.86.190.125:80'
+  // Or: node: 'http://elasticsearch.local:80'
+});
+
+// Check cluster health
+async function checkHealth() {
+  const health = await client.cluster.health();
+  console.log('Cluster status:', health.body.status);
+}
+```
+
+### Environment Variables
+```bash
+# Add to your application's .env file
+ELASTICSEARCH_HOST=100.86.190.125
+ELASTICSEARCH_PORT=80
+ELASTICSEARCH_SCHEME=http
+ELASTICSEARCH_URL=http://elasticsearch.local:80
+
+# For production
+ELASTICSEARCH_PROD_URL=https://elasticsearch.local:443
+```
+
+## 📊 API Usage Examples
+
+### Basic Operations
 ```bash
 # Cluster health
-curl http://100.86.190.125:80/_cluster/health?pretty
+curl http://elasticsearch.local:80/_cluster/health?pretty
 
-# Node info
-curl http://100.86.190.125:80/_cat/nodes?v
+# Node information
+curl http://elasticsearch.local:80/_cat/nodes?v
 
-# List indices
-curl http://100.86.190.125:80/_cat/indices?v
-```
-
-### Index Operations
-```bash
 # Create index
-curl -X PUT http://100.86.190.125:80/my-index
+curl -X PUT http://elasticsearch.local:80/my-index
 
 # Add document
-curl -X POST http://100.86.190.125:80/my-index/_doc \
+curl -X POST http://elasticsearch.local:80/my-index/_doc \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello Elasticsearch"}'
 
-# Search
-curl http://100.86.190.125:80/my-index/_search?pretty
+# Search documents
+curl http://elasticsearch.local:80/my-index/_search?pretty
 ```
 
 ## 🔍 Monitoring
@@ -91,183 +144,47 @@ docker ps
 
 # Logs
 docker logs elasticsearch-es01 --tail 20
-docker logs nginx-elasticsearch-proxy --tail 20
-
-# Resources
-docker stats --no-stream
+sudo tail -f /var/log/nginx/elasticsearch-dev.access.log
 ```
 
-## 🛠️ Maintenance
+## 🔒 Security Features
 
-### Automated
-```bash
-./maintenance.sh
-```
+### Two-Tier Protection
+1. **Host Nginx Security**:
+   - Rate limiting (200 req/s dev, 100 req/s prod)
+   - Security headers (XSS, CSRF, HSTS)
+   - SSL/TLS encryption (production)
 
-### Manual
-```bash
-# Restart cluster
-docker compose restart
+2. **Docker Network Isolation**:
+   - Internal-only Docker nginx (127.0.0.1:8080)
+   - No public port exposure for Elasticsearch
+   - Container network isolation
 
-# Update config and restart
-docker compose down
-docker compose up -d
-```
-
-## ⚡ Performance Features
-
-### Optimizations Applied
-- **Memory**: 1GB heap per ES node (3GB total)
-- **CPU**: 4-core ARM64 optimized
-- **Nginx**: 4 workers, 2048 connections
-- **Security**: Rate limiting, headers, authentication
-
-### Resource Usage
-- **Total Memory**: ~4GB of 8GB Pi RAM
-- **Storage**: Persistent volumes for data/logs
-- **Network**: Docker bridge isolation
-
-## 🔒 Security
-
-### Features Enabled
-- Basic authentication
-- Rate limiting (100 req/s)
-- Security headers (XSS, CSRF protection)
-- Network isolation
-
-### Access Control
-```bash
-# Health check endpoint
-curl http://100.86.190.125:80/nginx-health
-```
+3. **Access Control**:
+   - Only standard ports exposed (80, 443)
+   - Port 9200 completely blocked
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 ```bash
-# Check cluster status
-curl http://100.86.190.125:80/_cluster/health
+# Check services
+docker ps
+sudo systemctl status nginx
 
-# View logs for errors
-docker logs elasticsearch-es01
-docker logs nginx-elasticsearch-proxy
+# Test connectivity
+curl http://localhost:80/_cluster/health
 
-# Restart if needed
-docker compose restart
+# Verify blocked ports
+curl http://localhost:9200/_cluster/health  # Should fail
 ```
-
-### System Requirements
-```bash
-# Verify vm.max_map_count
-sysctl vm.max_map_count
-# Should be >= 262144
-
-# Check available memory
-free -h
-# Should have 8GB total
-```
-
-## 📈 API Examples
-
-### Basic Operations
-```bash
-# Create index with mapping
-curl -X PUT http://100.86.190.125:80/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "mappings": {
-      "properties": {
-        "name": {"type": "text"},
-        "price": {"type": "float"}
-      }
-    }
-  }'
-
-# Bulk insert
-curl -X POST http://100.86.190.125:80/_bulk \
-  -H "Content-Type: application/json" \
-  -d '
-{"index":{"_index":"products"}}
-{"name":"Laptop","price":999.99}
-{"index":{"_index":"products"}}
-{"name":"Mouse","price":29.99}
-'
-
-# Search with filters
-curl -X POST http://100.86.190.125:80/products/_search \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": {
-      "bool": {
-        "must": [{"match": {"name": "laptop"}}],
-        "filter": [{"range": {"price": {"gte": 500}}}]
-      }
-    }
-  }'
-```
-
-## 🔄 Backup & Recovery
-
-### Configuration Backup
-```bash
-# Manual backup
-tar -czf backup_$(date +%Y%m%d).tar.gz storage/
-
-# Automated (weekly cron)
-# Runs via maintenance.sh
-```
-
-### Data Snapshots
-```bash
-# Create snapshot repository
-curl -X PUT http://100.86.190.125:80/_snapshot/backup \
-  -H "Content-Type: application/json" \
-  -d '{"type": "fs", "settings": {"location": "/backup"}}'
-
-# Create snapshot
-curl -X PUT http://100.86.190.125:80/_snapshot/backup/snap1
-```
-
-## 🎯 Best Practices
-
-### Development
-- Always use load balancer endpoint (port 80)
-- Monitor cluster health regularly
-- Use appropriate data types in mappings
-- Keep indices reasonably sized
-
-### Production
-- Regular backups via maintenance script
-- Monitor system resources
-- Update security credentials
-- Implement proper logging
-
-## 📞 Quick Reference
-
-### Health Checks
-```bash
-# All-in-one health check
-curl http://100.86.190.125:80/nginx-health && \
-curl http://100.86.190.125:80/_cluster/health
-```
-
-### Performance Stats
-```bash
-# Node performance
-curl http://100.86.190.125:80/_nodes/stats?pretty
-
-# Cluster stats
-curl http://100.86.190.125:80/_cluster/stats?pretty
-```
-
----
 
 ## 🏆 Status: Production Ready ✅
 
+- **Architecture**: Two-tier security (Host + Docker nginx)
 - **Cluster**: GREEN (3/3 nodes healthy)
-- **Load Balancer**: Active
-- **Security**: Enabled  
-- **Monitoring**: Automated
-- **Backups**: Scheduled
+- **Security**: Maximum protection (no direct ES access)
+- **SSL**: Enabled for production
+- **Access**: Standard ports only (80, 443)
 
-**Ready for production workloads!**
+**Your Elasticsearch cluster is ready for production workloads with enterprise-grade security!**
